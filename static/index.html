@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sklep Lab02</title>
+    <style>
+        body { font-family: sans-serif; max-width: 1000px; margin: auto; padding: 20px; background-color: #f9f9f9; }
+        .container { display: flex; gap: 20px; }
+        .column { flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        
+        .product-item, .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
+        .price { font-weight: bold; color: #2c3e50; }
+        
+        button { cursor: pointer; padding: 5px 10px; border: none; border-radius: 4px; }
+        .btn-add { background-color: #28a745; color: white; }
+        .btn-remove { background-color: #dc3545; color: white; }
+        .btn-checkout { background-color: #007bff; color: white; width: 100%; padding: 15px; font-size: 1.2em; margin-top: 20px; }
+        
+        input[type="number"] { width: 50px; padding: 5px; }
+        #status { margin-bottom: 20px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Sklep Internetowy (Lab02)</h1>
+    <div id="status"></div>
+
+    <div class="container">
+        <div class="column">
+            <h2>Produkty</h2>
+            <div id="productsList">Ładowanie...</div>
+            
+            <h3>Dodaj nowy produkt</h3>
+            <form id="addProductForm">
+                <input type="text" id="newProdName" placeholder="Nazwa" required>
+                <input type="number" id="newProdPrice" placeholder="Cena" step="0.01" min="0" required>
+                <button type="submit" class="btn-add">Dodaj do bazy</button>
+            </form>
+        </div>
+
+        <div class="column">
+            <h2>Twój Koszyk</h2>
+            <div id="cartList">Koszyk jest pusty.</div>
+            <div style="text-align: right; margin-top: 20px; font-size: 1.2em;">
+                Suma: <span id="cartTotal">0.00</span> PLN
+            </div>
+            <button class="btn-checkout" onclick="checkout()">Złóż Zamówienie (Checkout)</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+
+        function showStatus(msg, type='success') {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = type;
+            setTimeout(() => { el.textContent = ''; el.className = ''; }, 3000);
+        }
+
+        async function loadProducts() {
+            const res = await fetch(`${API_URL}/products`);
+            const products = await res.json();
+            const container = document.getElementById('productsList');
+            container.innerHTML = '';
+            
+            products.forEach(p => {
+                container.innerHTML += `
+                    <div class="product-item">
+                        <div>
+                            <strong>${p.name}</strong>
+                            <div class="price">${p.price.toFixed(2)} PLN</div>
+                        </div>
+                        <div>
+                            <input type="number" value="1" min="1" id="qty-${p.id}">
+                            <button class="btn-add" onclick="addToCart(${p.id})">Dodaj</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function loadCart() {
+            const res = await fetch(`${API_URL}/cart`);
+            const data = await res.json();
+            const container = document.getElementById('cartList');
+            const totalEl = document.getElementById('cartTotal');
+            
+            container.innerHTML = '';
+            if (data.items.length === 0) {
+                container.innerHTML = 'Koszyk jest pusty.';
+                totalEl.textContent = '0.00';
+                return;
+            }
+
+            data.items.forEach(item => {
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${item.name}</strong>
+                            <div>${item.price.toFixed(2)} PLN x <input type="number" value="${item.qty}" min="1" onchange="updateCartItem(${item.product_id}, this.value)" style="width:40px"></div>
+                        </div>
+                        <div>
+                            <div class="price">${item.line_total.toFixed(2)} PLN</div>
+                            <button class="btn-remove" onclick="removeFromCart(${item.product_id})">X</button>
+                        </div>
+                    </div>
+                `;
+            });
+            totalEl.textContent = data.total.toFixed(2);
+        }
+
+        async function addToCart(id) {
+            const qtyInput = document.getElementById(`qty-${id}`);
+            const qty = parseInt(qtyInput.value);
+            
+            const res = await fetch(`${API_URL}/cart/add`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ product_id: id, qty: qty })
+            });
+            
+            if(res.ok) {
+                showStatus('Dodano do koszyka');
+                loadCart();
+            }
+        }
+
+        async function updateCartItem(id, newQty) {
+            await fetch(`${API_URL}/cart/item`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ product_id: id, qty: parseInt(newQty) })
+            });
+            loadCart();
+        }
+
+        async function removeFromCart(id) {
+            await fetch(`${API_URL}/cart/item/${id}`, { method: 'DELETE' });
+            loadCart();
+        }
+
+        async function checkout() {
+            const res = await fetch(`${API_URL}/checkout`, { method: 'POST' });
+            const data = await res.json();
+            
+            if(res.ok) {
+                showStatus(`Zamówienie złożone! ID: ${data.order_id}, Kwota: ${data.total.toFixed(2)} PLN`);
+                loadCart(); // Koszyk powinien być pusty
+            } else {
+                showStatus(data.error || 'Błąd zamówienia', 'error');
+            }
+        }
+        
+        // Dodawanie nowego produktu (CRUD)
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('newProdName').value;
+            const price = parseFloat(document.getElementById('newProdPrice').value);
+            
+            const res = await fetch(`${API_URL}/products`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, price })
+            });
+            
+            if(res.ok) {
+                showStatus('Dodano produkt');
+                document.getElementById('addProductForm').reset();
+                loadProducts();
+            } else {
+                showStatus('Błąd dodawania produktu', 'error');
+            }
+        });
+
+        // Start
+        loadProducts();
+        loadCart();
+    </script>
+</body>
+</html>
