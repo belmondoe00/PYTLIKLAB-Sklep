@@ -6,7 +6,7 @@ Aplikacja e-commerce napisana w Pythonie (Flask), realizująca funkcjonalności 
 
 * **Produkty:** Pełny CRUD (dodawanie produktów przez formularz), wyświetlanie listy z cenami.
 * **Koszyk:** Obsługa koszyka w oparciu o sesję (dodawanie, usuwanie, edycja ilości, dynamiczne sumowanie kosztów).
-* **Zamówienia:** Finalizacja zamówienia (Checkout) z zapisem do bazy danych i tzw. "snapshotem" ceny (cena jest zapamiętywana z momentu zakupu, niezależnie od późniejszych zmian).
+* **Zamówienia:** Finalizacja zamówienia (Checkout) z zapisem do bazy danych i tzw. "snapshotem" ceny.
 
 ## Technologia
 
@@ -16,27 +16,43 @@ Aplikacja e-commerce napisana w Pythonie (Flask), realizująca funkcjonalności 
 
 ## Instrukcja uruchomienia
 
-1. **Stwórz środowisko wirtualne:**
-   ```bash
-   python -m venv venv
+**1. Stwórz środowisko wirtualne:**
+```bash
+python -m venv venv
+```
 
-Aktywuj środowisko:
+**2. Aktywuj środowisko:**
+* Windows:
+  ```bash
+  .\venv\Scripts\activate
+  ```
+* macOS/Linux:
+  ```bash
+  source venv/bin/activate
+  ```
 
-Windows:
-.\venv\Scripts\activate
-
-macOS/Linux:
-source venv/bin/activate
-
-Zainstaluj wymagane biblioteki:
+**3. Zainstaluj wymagane biblioteki:**
+```bash
 pip install -r requirements.txt
+```
 
-Uruchom serwer:
+**4. Uruchom serwer:**
+```bash
 python app.py
+```
 
-Otwórz aplikację: Wejdź w przeglądarce na adres: http://127.0.0.1:5000
+**5. Otwórz aplikację:**
+Wejdź w przeglądarce na adres: http://127.0.0.1:5000
 
-Zrzuty ekranu
-1. Dodawanie produktu i widok listy
-2. Zarządzanie koszykiem (edycja ilości i przeliczanie sumy)
-3. Finalizacja zamówienia (Checkout)
+---
+
+## Zrzuty ekranu
+
+### 1. Dodawanie produktu i widok listy
+![Widok Produktów](img/screen1.png)
+
+### 2. Zarządzanie koszykiem
+![Koszyk](img/screen2.png)
+
+### 3. Finalizacja zamówienia
+![Zamówienie](img/screen3.png)
